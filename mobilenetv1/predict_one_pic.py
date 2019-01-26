@@ -70,7 +70,7 @@ def main(args):
             #         f1.writelines(lines[k].split(":")[1])
 
             for j in range(5):
-                print("%.2f%%--%s" % (pred[des_idx[999-j]]*100, lines[des_idx[999-j]].strip()))
+                print("%.2f%%--%s" % (pred[des_idx[4-j]]*100, lines[des_idx[4-j]].strip())) # need modify
 
 
 def parse_arguments(argv):

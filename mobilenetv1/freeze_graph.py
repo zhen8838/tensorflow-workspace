@@ -18,7 +18,7 @@ def freeze_graph(model_def, input_dir, output_graph):
     images_placeholder = tf.placeholder(tf.float32, shape=(None, 224, 224, 3), name='input')
 
     logits, _ = network.inference(images_placeholder, keep_probability=0,
-                                  phase_train=False, class_num=1000)
+                                  phase_train=False, class_num=5)
 
     ckpt_dir_exp = os.path.expanduser(input_dir)
 

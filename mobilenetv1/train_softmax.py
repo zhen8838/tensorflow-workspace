@@ -12,7 +12,7 @@ import tensorflow as tf
 import numpy as np
 import importlib
 import argparse
-import base_func
+from mobilenetv1.base_func import *
 import h5py
 import math
 import tensorflow.contrib.slim as slim
@@ -37,11 +37,11 @@ def main(args):
         os.makedirs(model_dir)
 
     # Write arguments to a text file
-    base_func.write_arguments_to_file(args, os.path.join(log_dir, 'arguments.txt'))
+    write_arguments_to_file(args, os.path.join(log_dir, 'arguments.txt'))
 
     np.random.seed(seed=args.seed)
     random.seed(args.seed)
-    dataset = base_func.get_dataset(args.data_dir)
+    dataset = get_dataset(args.data_dir)
 
     train_set, val_set = dataset, []
 
@@ -59,11 +59,11 @@ def main(args):
         global_step = tf.Variable(0, trainable=False)
 
         # Get a list of image paths and their labels
-        image_list, label_list = base_func.get_image_paths_and_labels(train_set)
+        image_list, label_list = get_image_paths_and_labels(train_set)
 
         assert len(image_list) > 0, 'The training set should not be empty'
 
-        val_image_list, val_label_list = base_func.get_image_paths_and_labels(val_set)
+        val_image_list, val_label_list = get_image_paths_and_labels(val_set)
 
         # Create a queue that produces indices into the image_list and label_list
         labels = ops.convert_to_tensor(label_list, dtype=tf.int32)
@@ -79,14 +79,16 @@ def main(args):
         image_paths_placeholder = tf.placeholder(tf.string, shape=(None, 1), name='image_paths')
         labels_placeholder = tf.placeholder(tf.int32, shape=(None, 1), name='labels')
         control_placeholder = tf.placeholder(tf.int32, shape=(None, 1), name='control')
+        # ============ start define the dataset pipeline
 
-        nrof_preprocess_threads = 4
-        input_queue = data_flow_ops.FIFOQueue(capacity=2000000,
-                                              dtypes=[tf.string, tf.int32, tf.int32],
-                                              shapes=[(1,), (1,), (1,)],
-                                              shared_name=None, name=None)
-        enqueue_op = input_queue.enqueue_many([image_paths_placeholder, labels_placeholder, control_placeholder], name='enqueue_op')
-        image_batch, label_batch = base_func.create_input_pipeline(input_queue, image_size, nrof_preprocess_threads, batch_size_placeholder)
+        # nrof_preprocess_threads = 4
+        # input_queue = data_flow_ops.FIFOQueue(capacity=2000000,
+        #                                       dtypes=[tf.string, tf.int32, tf.int32],
+        #                                       shapes=[(1,), (1,), (1,)],
+        #                                       shared_name=None, name=None)
+        # enqueue_op = input_queue.enqueue_many([image_paths_placeholder, labels_placeholder, control_placeholder], name='enqueue_op')
+        # image_batch, label_batch = create_input_pipeline(input_queue, image_size, nrof_preprocess_threads, batch_size_placeholder)
+        # image_batch, label_batch=
 
         image_batch = tf.identity(image_batch, 'image_batch')
         image_batch = tf.identity(image_batch, 'input')
@@ -125,8 +127,8 @@ def main(args):
         total_loss = tf.add_n([cross_entropy_mean], name='total_loss')
 
         # Build a Graph that trains the model with one batch of examples and updates the model parameters
-        train_op = base_func.train(total_loss, global_step, args.optimizer,
-                                   learning_rate, args.moving_average_decay, tf.global_variables(), args.log_histograms)
+        train_op = train(total_loss, global_step, args.optimizer,
+                         learning_rate, args.moving_average_decay, tf.global_variables(), args.log_histograms)
 
         # Create a saver
         var_list = tf.trainable_variables()
@@ -190,7 +192,7 @@ def train(args, sess, epoch, image_list, label_list, index_dequeue_op, enqueue_o
     if args.learning_rate > 0.0:
         lr = args.learning_rate
     else:
-        lr = base_func.get_learning_rate_from_file(learning_rate_schedule_file, epoch)
+        lr = get_learning_rate_from_file(learning_rate_schedule_file, epoch)
 
     if lr <= 0:
         return False
@@ -202,7 +204,7 @@ def train(args, sess, epoch, image_list, label_list, index_dequeue_op, enqueue_o
     # Enqueue one epoch of image paths and labels
     labels_array = np.expand_dims(np.array(label_epoch), 1)
     image_paths_array = np.expand_dims(np.array(image_epoch), 1)
-    control_value = base_func.RANDOM_ROTATE * random_rotate + base_func.RANDOM_CROP * random_crop + base_func.RANDOM_FLIP * random_flip + base_func.FIXED_STANDARDIZATION * use_fixed_image_standardization
+    control_value = RANDOM_ROTATE * random_rotate + RANDOM_CROP * random_crop + RANDOM_FLIP * random_flip + FIXED_STANDARDIZATION * use_fixed_image_standardization
     print('use_fixed_image_standardization=%d' % use_fixed_image_standardization)
     control_array = np.ones_like(labels_array) * control_value
     sess.run(enqueue_op, {image_paths_placeholder: image_paths_array, labels_placeholder: labels_array, control_placeholder: control_array})

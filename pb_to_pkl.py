@@ -3,9 +3,7 @@ import tensorflow as tf
 from mobilenetv1.models import mobilenet_v1
 from utils import *
 import numpy as np
-PB_FILE_PATH = 'pretrained/mobilenetv1_1.0.pb'
-PKL_FILE_PATH = PB_FILE_PATH[:-3]+'.pkl'
-LIST_FILE_PATH = PB_FILE_PATH[:-3]+'_node.csv'
+import argparse
 
 
 def test_two_node(g, sess):
@@ -33,7 +31,7 @@ def check_var_list():
         assert var.name[:-2] == pbvarlist[i].name[:-5]
 
 
-def get_optlist_from_pb(sess, filepath)->list:
+def get_optlist_from_pb(g, sess, filepath)->list:
     """ 从pb文件获得所有操作节点 """
     with tf.gfile.GFile(filepath, 'rb') as f:
         graph_def = tf.GraphDef()
@@ -58,13 +56,13 @@ def convert_vars_to_tensor(g, varlist: list)->list:
     return tensorlist
 
 
-if __name__ == "__main__":
+def pb_2_pkl(PB_FILE_PATH, PKL_FILE_PATH, LIST_FILE_PATH):
     """ 运行此程序将pb文件转化成pkl文件 """
     g = tf.get_default_graph()  # type:tf.Graph
     sess = tf.Session()
     print("load graph")
     # 加载pb文件,获取所有操作符
-    optlist = get_optlist_from_pb(sess, PB_FILE_PATH)
+    optlist = get_optlist_from_pb(g, sess, PB_FILE_PATH)
     # 取出读取变量操作符
     varlist = get_vars_from_optlist(optlist)
     # 获得变量tensor
@@ -80,3 +78,20 @@ if __name__ == "__main__":
     with open(LIST_FILE_PATH, 'w') as f:
         for k, v in vardict.items():
             f.write(k+','+'{}\n'.format(list(np.ravel(v)[:32])))
+
+
+def main(args):
+    pb_2_pkl(args.pb_path, args.pkl_path, args.pkl_path[:-4]+'_node.csv')
+
+
+def parse_arguments(argv):
+    parser = argparse.ArgumentParser(usage='Convert the pb file to pkl file')
+    parser.add_argument('--pb_path', type=str,
+                        help='Tensorflow model (.pb) file path', default='pretrained/mobilenetv1_1.0.pb')
+    parser.add_argument('--pkl_path', type=str,
+                        help='Directory weight file (.pkl) file path', default='pretrained/mobilenetv1_1.0.pkl')
+    return parser.parse_args(argv)
+
+
+if __name__ == '__main__':
+    main(parse_arguments(sys.argv[1:]))

@@ -3,6 +3,7 @@ import os
 import tensorflow as tf
 from preprocessing import inception_preprocessing
 import csv
+import pickle
 
 
 class ImageClass():
@@ -191,3 +192,14 @@ def create_train_op(total_loss, global_step, optimizer, learning_rate, moving_av
     train_op = opt.minimize(total_loss, global_step)
 
     return train_op
+
+
+def load_pkl(filepath)->dict:
+    """ 加载pkl文件 """
+    with open(filepath, 'rb') as f:
+        return pickle.load(f)
+
+
+def save_pkl(obj, name):
+    with open(name, 'wb') as f:
+        pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)

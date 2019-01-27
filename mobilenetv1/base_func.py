@@ -119,7 +119,7 @@ def _add_loss_summaries(total_loss):
     return loss_averages_op
 
 
-def train(total_loss, global_step, optimizer, learning_rate, moving_average_decay, update_gradient_vars, log_histograms=True):
+def create_train_op(total_loss, global_step, optimizer, learning_rate, moving_average_decay, update_gradient_vars, log_histograms=True):
     # Generate moving averages of all losses and associated summaries.
     loss_averages_op = _add_loss_summaries(total_loss)
 
@@ -304,9 +304,6 @@ def get_dataset(path, has_class_directories=True):
     classes.sort()
 
     nrof_classes = len(classes)
-    # with open("label.txt","w") as f:
-    #     for ii in range(nrof_classes):
-    #         f.writelines(classes[ii]+"\n")
 
     for i in range(nrof_classes):
         class_name = classes[i]

@@ -81,14 +81,13 @@ def main(args):
         control_placeholder = tf.placeholder(tf.int32, shape=(None, 1), name='control')
         # ============ start define the dataset pipeline
 
-        # nrof_preprocess_threads = 4
-        # input_queue = data_flow_ops.FIFOQueue(capacity=2000000,
-        #                                       dtypes=[tf.string, tf.int32, tf.int32],
-        #                                       shapes=[(1,), (1,), (1,)],
-        #                                       shared_name=None, name=None)
-        # enqueue_op = input_queue.enqueue_many([image_paths_placeholder, labels_placeholder, control_placeholder], name='enqueue_op')
-        # image_batch, label_batch = create_input_pipeline(input_queue, image_size, nrof_preprocess_threads, batch_size_placeholder)
-        # image_batch, label_batch=
+        nrof_preprocess_threads = 4
+        input_queue = data_flow_ops.FIFOQueue(capacity=2000000,
+                                              dtypes=[tf.string, tf.int32, tf.int32],
+                                              shapes=[(1,), (1,), (1,)],
+                                              shared_name=None, name=None)
+        enqueue_op = input_queue.enqueue_many([image_paths_placeholder, labels_placeholder, control_placeholder], name='enqueue_op')
+        image_batch, label_batch = create_input_pipeline(input_queue, image_size, nrof_preprocess_threads, batch_size_placeholder)
 
         image_batch = tf.identity(image_batch, 'image_batch')
         image_batch = tf.identity(image_batch, 'input')
@@ -127,7 +126,7 @@ def main(args):
         total_loss = tf.add_n([cross_entropy_mean], name='total_loss')
 
         # Build a Graph that trains the model with one batch of examples and updates the model parameters
-        train_op = train(total_loss, global_step, args.optimizer,
+        train_op = create_train_op(total_loss, global_step, args.optimizer,
                          learning_rate, args.moving_average_decay, tf.global_variables(), args.log_histograms)
 
         # Create a saver

@@ -7,7 +7,7 @@ python3 train.py    --logs_base_dir "backup_classifier" \
                     --data_dir /media/zqh/Datas/DataSet/flower_photos \
                     --max_nrof_epochs 1 \
                     --batch_size 32 \
-                    --image_size 224
+                    --image_size 224 \
                     --class_num 5 \
                     --keep_probability 1.0 \
                     --weight_decay 0.0 \

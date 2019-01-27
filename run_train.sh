@@ -1,5 +1,6 @@
 #!/bin/bash
 python3 train.py    --logs_base_dir "backup_classifier" \
+                    --pre_train_path "pretrained/mobilenetv1_1.0.pkl" \
                     --models_base_dir "backup_classifier" \
                     --gpus 0 \
                     --class_num_changed False \

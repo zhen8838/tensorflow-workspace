@@ -80,8 +80,13 @@ def main(args):
 
     # Start running operations on the Graph.
     with tf.Session() as sess:
+        # init the all varibles~
         sess.run(tf.global_variables_initializer())
         sess.run(tf.local_variables_initializer())
+        # NOTE if custom the model, must run restore after variable initialize
+        if os.path.exists(args.pre_train_path):
+            # restore the weight
+            restore_form_pkl(sess, pklpath=args.pre_train_path, except_last=True)
         summary_writer = tf.summary.FileWriter(log_dir, sess.graph)
         tf.summary.scalar('learning rate', current_learning_rate)
         tf.summary.scalar('loss', total_loss)
@@ -109,6 +114,9 @@ def train_one_epoch(sess, step_per_epoch, merged_op, global_step, loss, train_op
 
 def parse_arguments(argv):
     parser = argparse.ArgumentParser()
+
+    parser.add_argument('--pre_train_path', type=str,
+                        help='Path of pre-train models weight (.pkl) .', default='pretrained/mobilenetv1_1.0.pkl')
 
     parser.add_argument('--logs_base_dir', type=str,
                         help='Directory where to write event logs.', default='backup_classifier')
@@ -140,7 +148,7 @@ def parse_arguments(argv):
                         help='The optimization algorithm to use', default='ADADELTA')
     parser.add_argument('--init_learning_rate', type=float,
                         help='Initial learning rate. If set to a negative value a learning rate ' +
-                        'schedule can be specified in the file "learning_rate_schedule.txt"', default=0.00042)
+                        'schedule can be specified in the file "learning_rate_schedule.txt"', default=0.0006)
     parser.add_argument('--learning_rate_decay_epochs', type=int,
                         help='Number of epochs between learning rate decay.', default=10)
     parser.add_argument('--learning_rate_decay_factor', type=float,

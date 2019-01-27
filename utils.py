@@ -35,16 +35,6 @@ def get_image_paths(facedir):
     return image_paths
 
 
-def get_filelist(fliepath):
-    name_list = []
-    label_list = []
-    train_reader = csv.reader(open(fliepath, 'r'))
-    for pa, la in train_reader:
-        name_list.append(pa)
-        label_list.append(int(la))
-    return name_list, label_list
-
-
 def get_dataset(path, has_class_directories=True):
     """ 按类别从文件夹中获得分类对象,返回ImageClass的list """
     imgset = []
@@ -112,7 +102,17 @@ def create_dataset(namelist: list, labelist: list, batchsize: int, class_num: in
     return dataset, step_for_epoch
 
 
-def create_dataset_iter(dataset):
+def create_dataset_iter(dataset: tf.data.Dataset):
+    """ create dataset iter
+
+    Parameters
+    ----------
+    dataset : tf.data.Dataset
+
+    Returns
+    -------
+    dataset iter
+    """
     data_it = dataset.make_one_shot_iterator()
     # 定义个获取下一组数据的操作(operator)
     return data_it.get_next()
@@ -203,3 +203,38 @@ def load_pkl(filepath)->dict:
 def save_pkl(obj, name):
     with open(name, 'wb') as f:
         pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+
+
+def restore_form_pkl(sess: tf.Session(), pklpath: str, except_last=True):
+    """ restore the pre-train weight form the .pkl file
+
+    Parameters
+    ----------
+    sess : tf.Session
+        sess
+    pklpath : str
+        .pkl file path
+    except_last : bool, optional
+        whether load the last layer weight, when you custom the net shouldn't load 
+        the layer name scope is 'MobileNetV1/Bottleneck2'
+        (the default is True, which not load the last layer weight)
+    """
+    # tf.global_variables() == tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
+    # filter the last layer weight
+    modelvarlist = [var for var in tf.trainable_variables(scope='MobileNetV1') if not (except_last and 'MobileNetV1/Bottleneck2' in var.name)]
+    pre_weight_dict = load_pkl(pklpath)
+
+    # make sure the number equal
+    var_num = len(modelvarlist)
+
+    # save the opt to list
+    opt_list = []
+    for newv in modelvarlist:
+        for k, oldv in pre_weight_dict.items():
+            if k == newv.name:
+                opt_list.append(tf.assign(newv, oldv))
+
+    # make sure the number equal
+    assert len(opt_list) == var_num
+    # run the assign
+    sess.run(opt_list)

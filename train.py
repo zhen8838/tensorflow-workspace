@@ -158,9 +158,6 @@ def parse_arguments(argv):
     parser.add_argument('--gpus', type=str,
                         help='Indicate the GPUs to be used.', default='2')
 
-    parser.add_argument('--pretrained_model', type=str,
-                        help='Load a pretrained model before training starts.')
-
     parser.add_argument('--class_num_changed', type=bool, default=False,
                         help='indicate if the class_num is different from pretrained.')
     parser.add_argument('--data_dir', type=str,

@@ -1,3 +1,6 @@
 *.pyc
 mobilenetv1/backup_classifier
 backup_classifier
+*.jpg
+*.txt
+*.list

@@ -1,7 +1,7 @@
 from six import iteritems
 import os
 import tensorflow as tf
-from preprocessing import inception_preprocessing
+import inception_preprocessing
 import csv
 import pickle
 
@@ -68,11 +68,11 @@ def parser(filename, label, class_num, height, witdh, is_training):
     # with tf.gfile.GFile(filename, 'rb') as f:
     img = tf.read_file(filename)  # f.read()
     img = tf.image.decode_jpeg(img, channels=3)
-    # NOTE the inception_preprocessing will convert image scale to [-1,1]
 
     img_resized = inception_preprocessing.preprocess_image(
         img, height, witdh, is_training=is_training,
         add_image_summaries=False)
+    # NOTE the inception_preprocessing will convert image scale to [-1,1]
 
     one_hot_label = tf.one_hot(label, class_num, 1, 0)
     # NOTE label should expand axis
@@ -93,10 +93,9 @@ def create_dataset(namelist: list, labelist: list, batchsize: int, class_num: in
         batch_size=batchsize,
         # add drop_remainder avoid output shape less than batchsize
         drop_remainder=True))
-    # repeat
-    dataset = dataset.repeat()
-    # shuffle
-    dataset = dataset.shuffle(50, seed=seed)
+    # shuffle and repeat
+    dataset = dataset.apply(tf.data.experimental.shuffle_and_repeat(50, None, seed=seed))
+
     # clac step for per epoch
     step_for_epoch = int(len(labelist)/batchsize)
     return dataset, step_for_epoch
@@ -135,34 +134,7 @@ def get_learning_rate_from_file(filename, epoch):
                     return learning_rate
 
 
-def get_control_flag(control, field):
-    return tf.equal(tf.mod(tf.floor_div(control, field), 2), 1)
-
-
-def _add_loss_summaries(total_loss):
-    """Add summaries for losses.
-
-    Generates moving average for all losses and associated summaries for
-    visualizing the performance of the network.
-
-    Args:
-      total_loss: Total loss from loss().
-    Returns:
-      loss_averages_op: op for generating moving averages of losses.
-    """
-    # Compute the moving average of all individual losses and the total loss.
-    loss_averages = tf.train.ExponentialMovingAverage(0.9, name='avg')
-    loss_averages_op = loss_averages.apply([total_loss])
-
-    return loss_averages_op
-
-
-def create_train_op(total_loss, global_step, optimizer, learning_rate, moving_average_decay):
-    # Generate moving averages of all losses and associated summaries.
-    # loss_averages_op = _add_loss_summaries(total_loss)
-
-    # Compute gradients.
-    # with tf.control_dependencies([loss_averages_op]):
+def create_train_op(total_loss, global_step, optimizer: str, learning_rate):
     if optimizer == 'ADAGRAD':
         opt = tf.train.AdagradOptimizer(learning_rate)
     elif optimizer == 'ADADELTA':
@@ -175,20 +147,7 @@ def create_train_op(total_loss, global_step, optimizer, learning_rate, moving_av
         opt = tf.train.MomentumOptimizer(learning_rate, momentum=0.9, use_nesterov=True)
     else:
         raise ValueError('Invalid optimization algorithm')
-    # ! 因为minimize中包含了compute_gradients和apply_gradients,所以他们的思路是:
-    # ! 首先计算梯度,然后给梯度增加滑动平均,最后把滑动平均的梯度应用到梯度下降
-    #     grads = opt.compute_gradients(total_loss, update_gradient_vars)
 
-    # # Apply gradients.
-    # apply_gradient_op = opt.apply_gradients(grads, global_step=global_step)
-
-    # # Track the moving averages of all trainable variables.
-    # variable_averages = tf.train.ExponentialMovingAverage(moving_average_decay, global_step)
-    # variables_averages_op = variable_averages.apply(tf.trainable_variables())
-
-    # with tf.control_dependencies([apply_gradient_op, variables_averages_op]):
-    #     train_op = tf.no_op(name='train')
-    # ! 我先用原始的方式进行训练
     train_op = opt.minimize(total_loss, global_step)
 
     return train_op

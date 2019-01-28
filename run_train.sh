@@ -1,19 +1,16 @@
 #!/bin/bash
-python3 train.py    --logs_base_dir "backup_classifier" \
-                    --pre_train_path "pretrained/mobilenetv1_1.0.pkl" \
-                    --models_base_dir "backup_classifier" \
+python3 train.py    --pretrained_model "pretrained/mobilenetv1_1.0.pkl" \
+                    --logs_base_dir "backup_classifier" \
                     --gpus 0 \
-                    --class_num_changed False \
-                    --data_dir /media/zqh/Datas/DataSet/flower_photos \
-                    --max_nrof_epochs 1 \
+                    --data_dir "/media/zqh/Datas/DataSet/flower_photos" \
+                    --max_nrof_epochs 5 \
                     --batch_size 32 \
                     --image_size 224 \
                     --class_num 5 \
                     --keep_probability 1.0 \
                     --weight_decay 0.0 \
                     --optimizer "ADAM" \
-                    --init_learning_rate 0.0005 \
-                    --learning_rate_decay_epochs 10 \
+                    --init_learning_rate 0.0006 \
+                    --learning_rate_decay_epochs 20 \
                     --learning_rate_decay_factor 0.9 \
-                    --moving_average_decay 0.9999 \
-                    --seed 3 \
+                    --seed 3 

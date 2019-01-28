@@ -197,3 +197,15 @@ def restore_form_pkl(sess: tf.Session(), pklpath: str, except_last=True):
     assert len(opt_list) == var_num
     # run the assign
     sess.run(opt_list)
+
+
+def load_pb_model(model, input_map=None):
+    # Check if the model is a model directory (containing a metagraph and a checkpoint file)
+    #  or if it is a protobuf file with a frozen graph
+    model_exp = os.path.expanduser(model)
+    if (os.path.isfile(model_exp)):
+        print('Model filename: %s' % model_exp)
+        with tf.gfile.GFile(model_exp, 'rb') as f:
+            graph_def = tf.GraphDef()
+            graph_def.ParseFromString(f.read())
+            tf.import_graph_def(graph_def, input_map=input_map, name='')

@@ -2,5 +2,6 @@
 mobilenetv1/backup_classifier
 backup_classifier
 *.jpg
+*.jpeg
 *.txt
 *.list

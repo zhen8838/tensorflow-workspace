@@ -47,12 +47,12 @@ def main(args):
     # NOTE add placeholder_with_default node for test
     batch_image = tf.placeholder_with_default(image_next, shape=[None, 224, 224, 3], name='Input_image')
     batch_label = tf.placeholder_with_default(label_next, shape=[None, 5], name='Input_label')
-    logits, _ = mobilenet_v1.inference(batch_image, args.keep_probability, phase_train=True,
-                                       class_num=args.class_num, weight_decay=args.weight_decay)
+    nets, _ = mobilenet_v1.inference(batch_image, args.keep_probability, phase_train=True,
+                                     class_num=args.class_num, weight_decay=args.weight_decay)
 
-    predict = tf.identity(logits, name='Output_label')
+    logits = tf.identity(nets, name='Output_label')
     # ========= define loss ==================
-    tf.losses.softmax_cross_entropy(batch_label, predict)  # NOTE predict can't be softmax
+    tf.losses.softmax_cross_entropy(batch_label, logits)  # NOTE logits can't be softmax
     total_loss = tf.losses.get_total_loss(name='total_loss')  # NOTE add this can use in test
     # ========= get global steps =============
     global_step = tf.train.create_global_step()
@@ -64,7 +64,9 @@ def main(args):
 
     train_op = create_train_op(total_loss, global_step, args.optimizer, current_learning_rate)
     # ========= calc the accuracy ============
-    accuracy, accuracy_op = tf.metrics.accuracy(tf.argmax(batch_label, axis=-1), tf.argmax(predict, axis=-1), name='clac_acc')
+    accuracy, accuracy_op = tf.metrics.accuracy(tf.argmax(batch_label, axis=-1), tf.argmax(tf.nn.softmax(logits), axis=-1), name='clac_acc')
+
+    saver = tf.train.Saver()
 
     with tf.Session() as sess:
         # init the model and restore the pre-train weight
@@ -94,11 +96,12 @@ def main(args):
                     summary, _, losses, acc, _, lrate, step_cnt = sess.run([merged, train_op, total_loss, accuracy, accuracy_op,
                                                                             current_learning_rate, global_step])
                     writer.add_summary(summary, step_cnt)
-                    t.set_postfix(loss='{:<5.3f}'.format(losses), acc='{:5.2f}%'.format(acc*100), leraning_rate='{:7f}'.format(lrate))
+                    t.set_postfix(loss='{:<5.3f}'.format(losses), acc='{:5.2f}%'.format(acc*100), lr='{:7f}'.format(lrate))
                     t.update()
-        tf.saved_model.simple_save(sess, os.path.join(log_dir, 'backup'),
-                                   inputs={'Input_image': batch_image, 'Input_label': batch_label},
-                                   outputs={'Output_label': predict})
+        saver.save(sess, os.path.join(log_dir, 'model.ckpt'), global_step=global_step)
+        # tf.saved_model.simple_save(sess, os.path.join(log_dir, 'backup'),
+        #                            inputs={'Input_image': batch_image, 'Input_label': batch_label},
+        #                            outputs={'Output_label': logits})
 
 
 def parse_arguments(argv):
